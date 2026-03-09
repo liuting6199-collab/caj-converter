@@ -2,10 +2,32 @@
 
 一个基于 FastAPI + JavaScript 的 CAJ 批量转 PDF Web 工具，解决知网 CAJ 文件难以转换的痛点。
 
+## 📷 项目展示
+
+![alt text](image.png)(assets/screenshot.png)
+
+> *提示：运行本地项目后截图保存到 assets/screenshot.png*
+
+## ✨ 功能特性
+
+- 📁 **批量上传**：支持拖拽多个 CAJ 文件
+- ⚡ **自动转换**：后台自动处理，无需人工干预
+- 📊 **实时进度**：显示转换进度和状态
+- 📦 **批量下载**：一键下载所有转换后的 PDF
+- 🔒 **本地处理**：文件仅在本地处理，不上传到云端
+- 🎨 **美观界面**：现代化的 Web 界面
+
+## 🔧 技术栈
+
+- **后端**：Python + FastAPI
+- **前端**：HTML + Tailwind CSS + JavaScript
+- **转换核心**：caj2pdf 库
+- **部署**：Render（免费云平台）
+
 ## 📁 项目结构
 
 ```
-caj_converter_web/
+caj_converter/
 ├── backend/          # 后端代码
 │   ├── main.py       # FastAPI 服务主程序
 │   ├── cajparser.py  # CAJ 文件解析器
@@ -19,12 +41,10 @@ caj_converter_web/
 │       └── index.html # Web 界面
 ├── lib/              # caj2pdf 库
 │   └── bin/          # Windows DLL 文件
-├── docs/             # 文档
-│   ├── README.md     # 详细文档
-│   └── 快速开始.md   # 快速启动指南
 ├── requirements.txt  # Python 依赖
 ├── start.bat         # 启动脚本
-└── .gitignore        # Git 忽略配置
+├── .gitignore        # Git 忽略配置
+└── README.md         # 本文件
 ```
 
 ## 🚀 快速开始
@@ -45,22 +65,7 @@ python backend/main.py
 # 访问 http://127.0.0.1:8000
 ```
 
-## ✨ 功能特性
-
-- 📁 **批量上传**：支持拖拽多个 CAJ 文件
-- ⚡ **自动转换**：后台自动处理，无需人工干预
-- 📊 **实时进度**：显示转换进度和状态
-- 📦 **批量下载**：一键下载所有转换后的 PDF
-- 🔒 **本地处理**：文件仅在本地处理，不上传到云端
-- 🎨 **美观界面**：现代化的 Web 界面
-
-## 🔧 技术栈
-
-- **后端**：Python + FastAPI
-- **前端**：HTML + Tailwind CSS + JavaScript
-- **转换核心**：caj2pdf 库
-
-## 📝 使用说明
+##  使用说明
 
 1. **上传文件**：拖拽 CAJ 文件到上传区域，或点击选择文件
 2. **等待转换**：系统会自动处理，显示实时进度
