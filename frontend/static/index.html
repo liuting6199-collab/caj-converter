@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAJ Converter - 批量转PDF工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .drag-active { border-color: #3b82f6 !important; background-color: #eff6ff !important; }
+        .progress-bar { transition: width 0.3s ease; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">CAJ Converter</h1>
+                        <p class="text-sm text-gray-500">知网论文批量转PDF工具</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">
+                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        服务运行中
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Upload Area -->
+        <div id="uploadArea" class="bg-white rounded-2xl shadow-sm border-2 border-dashed border-gray-300 p-12 text-center transition-all duration-200 cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+            <div class="mb-6">
+                <svg class="mx-auto w-20 h-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">拖拽CAJ文件到这里</h3>
+            <p class="text-gray-500 mb-4">或点击选择文件，支持批量上传</p>
+            <div class="flex justify-center space-x-4 text-sm text-gray-400">
+                <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    支持 .caj .kdh .nh
+                </span>
+                <span class="flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    单个文件最大 50MB
+                </span>
+            </div>
+            <input type="file" id="fileInput" multiple accept=".caj,.kdh,.nh" class="hidden">
+        </div>
+
+        <!-- Task List -->
+        <div id="taskSection" class="mt-8 hidden">
+            <div class="bg-white rounded-xl shadow-sm border">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">转换任务</h2>
+                    <div class="flex space-x-3">
+                        <button id="clearAllBtn" class="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            清空列表
+                        </button>
+                        <button id="downloadAllBtn" class="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors">
+                            全部下载
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Task Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">文件名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">大小</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">进度</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskList" class="divide-y divide-gray-200">
+                            <!-- Tasks will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden px-6 py-12 text-center">
+                    <svg class="mx-auto w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="mt-4 text-gray-500">暂无任务，请上传文件</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">快速转换</h3>
+                <p class="text-sm text-gray-500">利用本地CAJViewer引擎，转换速度快，质量高</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">本地处理</h3>
+                <p class="text-sm text-gray-500">文件仅在本地处理，不上传到云端，保护隐私</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                    </svg>
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-2">批量处理</h3>
+                <p class="text-sm text-gray-500">支持同时处理多个文件，自动打包下载</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-full opacity-0 transition-all duration-300 z-50">
+        <div class="bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3">
+            <span id="toastIcon">✓</span>
+            <span id="toastMessage">操作成功</span>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        const tasks = new Map();
+        let pollingInterval = null;
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const taskSection = document.getElementById('taskSection');
+        const taskList = document.getElementById('taskList');
+        const emptyState = document.getElementById('emptyState');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-active');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-active');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-active');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            fileInput.value = ''; // Reset
+        });
+
+        clearAllBtn.addEventListener('click', clearAllTasks);
+        downloadAllBtn.addEventListener('click', downloadAll);
+
+        // File Handling
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(file => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                return ['caj', 'kdh', 'nh'].includes(ext);
+            });
+
+            if (validFiles.length === 0) {
+                showToast('请选择CAJ格式的文件', 'error');
+                return;
+            }
+
+            const invalidFiles = Array.from(files).length - validFiles.length;
+            if (invalidFiles > 0) {
+                showToast(`${invalidFiles}个文件格式不支持，已跳过`, 'warning');
+            }
+
+            validFiles.forEach(file => uploadFile(file));
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Create temporary task entry
+            const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const tempTask = {
+                id: tempId,
+                filename: file.name,
+                status: 'uploading',
+                progress: 0,
+                message: '正在上传...',
+                size: formatFileSize(file.size)
+            };
+            
+            tasks.set(tempId, tempTask);
+            renderTask(tempTask);
+            showTaskSection();
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Replace temp task with real task
+                    tasks.delete(tempId);
+                    document.querySelector(`[data-task-id="${tempId}"]`)?.remove();
+                    
+                    const task = {
+                        id: result.task_id,
+                        filename: file.name,
+                        status: 'pending',
+                        progress: 0,
+                        message: '等待转换',
+                        size: formatFileSize(file.size)
+                    };
+                    
+                    tasks.set(result.task_id, task);
+                    renderTask(task);
+                    startPolling();
+                    showToast('文件上传成功', 'success');
+                } else {
+                    tempTask.status = 'failed';
+                    tempTask.message = result.message;
+                    updateTask(tempTask);
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                tempTask.status = 'failed';
+                tempTask.message = '上传失败';
+                updateTask(tempTask);
+                showToast('上传失败，请重试', 'error');
+            }
+        }
+
+        // Polling for task status
+        function startPolling() {
+            if (pollingInterval) return;
+            
+            pollingInterval = setInterval(async () => {
+                const pendingTasks = Array.from(tasks.values()).filter(t => 
+                    t.status === 'pending' || t.status === 'converting'
+                );
+
+                if (pendingTasks.length === 0) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    return;
+                }
+
+                for (const task of pendingTasks) {
+                    try {
+                        const response = await fetch(`/api/task/${task.id}`);
+                        if (response.ok) {
+                            const status = await response.json();
+                            task.status = status.status;
+                            task.progress = status.progress;
+                            task.message = status.message;
+                            updateTask(task);
+
+                            if (status.status === 'completed') {
+                                showToast(`${task.filename} 转换完成`, 'success');
+                            } else if (status.status === 'failed') {
+                                showToast(`${task.filename} 转换失败`, 'error');
+                            } else if (status.status === 'manual') {
+                                showToast(`${task.filename} 需要手动转换，已自动打开CAJViewer`, 'warning');
+                                // 停止轮询这个任务
+                                return;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Polling error:', error);
+                    }
+                }
+            }, 1000);
+        }
+
+        // UI Rendering
+        function renderTask(task) {
+            const row = document.createElement('tr');
+            row.setAttribute('data-task-id', task.id);
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-900">${task.filename}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${task.size || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${getStatusBadge(task.status)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="w-full max-w-xs">
+                        <div class="flex items-center">
+                            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="progress-bar h-full ${getProgressColor(task.status)}" style="width: ${task.progress}%"></div>
+                            </div>
+                            <span class="ml-2 text-xs text-gray-500 w-12">${task.progress}%</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">${task.message}</p>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    ${getActionButtons(task)}
+                </td>
+            `;
+
+            taskList.appendChild(row);
+            updateEmptyState();
+        }
+
+        function updateTask(task) {
+            const row = document.querySelector(`[data-task-id="${task.id}"]`);
+            if (!row) return;
+
+            const statusCell = row.children[2];
+            const progressCell = row.children[3];
+            const actionCell = row.children[4];
+
+            statusCell.innerHTML = getStatusBadge(task.status);
+            progressCell.innerHTML = `
+                <div class="w-full max-w-xs">
+                    <div class="flex items-center">
+                        <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="progress-bar h-full ${getProgressColor(task.status)}" style="width: ${task.progress}%"></div>
+                        </div>
+                        <span class="ml-2 text-xs text-gray-500 w-12">${task.progress}%</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">${task.message}</p>
+                </div>
+            `;
+            actionCell.innerHTML = getActionButtons(task);
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                uploading: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">上传中</span>',
+                pending: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">等待中</span>',
+                converting: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 animate-pulse-slow">转换中</span>',
+                completed: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">已完成</span>',
+                failed: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">失败</span>',
+                manual: '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">需手动转换</span>'
+            };
+            return badges[status] || badges.pending;
+        }
+
+        function getProgressColor(status) {
+            const colors = {
+                uploading: 'bg-yellow-500',
+                pending: 'bg-gray-400',
+                converting: 'bg-blue-500',
+                completed: 'bg-green-500',
+                failed: 'bg-red-500',
+                manual: 'bg-orange-500'
+            };
+            return colors[status] || 'bg-gray-400';
+        }
+
+        function getActionButtons(task) {
+            if (task.status === 'completed') {
+                return `
+                    <button onclick="downloadTask('${task.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                        下载
+                    </button>
+                    <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-900">
+                        删除
+                    </button>
+                `;
+            } else if (task.status === 'failed') {
+                return `
+                    <button onclick="retryTask('${task.id}')" class="text-blue-600 hover:text-blue-900 mr-3">
+                        重试
+                    </button>
+                    <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-900">
+                        删除
+                    </button>
+                `;
+            } else if (task.status === 'manual') {
+                return `
+                    <button onclick="showManualGuide('${task.id}')" class="text-orange-600 hover:text-orange-900 mr-3">
+                        查看指引
+                    </button>
+                    <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-900">
+                        删除
+                    </button>
+                `;
+            } else {
+                return `
+                    <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-600">
+                        取消
+                    </button>
+                `;
+            }
+        }
+
+        // 显示手动转换指引
+        function showManualGuide(taskId) {
+            const task = tasks.get(taskId);
+            if (!task) return;
+
+            const guideHtml = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="manualGuideModal">
+                    <div class="bg-white rounded-lg p-8 max-w-lg w-full mx-4">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">📋 手动转换指引</h3>
+                        <div class="space-y-4 text-gray-600">
+                            <p>CAJViewer已自动打开文件，请按以下步骤操作：</p>
+                            <ol class="list-decimal list-inside space-y-2 ml-4">
+                                <li>在CAJViewer中查看文件</li>
+                                <li>点击菜单栏的 <strong>"文件"</strong> → <strong>"另存为"</strong></li>
+                                <li>选择保存类型为 <strong>"PDF文件 (*.pdf)"</strong></li>
+                                <li>选择保存位置，点击 <strong>"保存"</strong></li>
+                            </ol>
+                            <div class="bg-blue-50 p-4 rounded-lg mt-4">
+                                <p class="text-sm text-blue-800">
+                                    <strong>提示：</strong>转换完成后，您可以直接上传PDF文件，无需再次转换。
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="closeManualGuide()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                我知道了
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', guideHtml);
+        }
+
+        function closeManualGuide() {
+            const modal = document.getElementById('manualGuideModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function showTaskSection() {
+            taskSection.classList.remove('hidden');
+        }
+
+        function updateEmptyState() {
+            if (tasks.size === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        // Actions
+        async function downloadTask(taskId) {
+            try {
+                const response = await fetch(`/api/download/${taskId}`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = tasks.get(taskId)?.filename.replace(/\.[^/.]+$/, '.pdf') || 'download.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast('开始下载', 'success');
+                } else {
+                    showToast('下载失败', 'error');
+                }
+            } catch (error) {
+                showToast('下载失败', 'error');
+            }
+        }
+
+        async function downloadAll() {
+            const completedTasks = Array.from(tasks.values()).filter(t => t.status === 'completed');
+            
+            if (completedTasks.length === 0) {
+                showToast('没有可下载的文件', 'warning');
+                return;
+            }
+
+            if (completedTasks.length === 1) {
+                downloadTask(completedTasks[0].id);
+                return;
+            }
+
+            try {
+                const taskIds = completedTasks.map(t => t.id).join(',');
+                const response = await fetch(`/api/download/batch?task_ids=${taskIds}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `caj_batch_${new Date().getTime()}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showToast('开始批量下载', 'success');
+                } else {
+                    showToast('批量下载失败', 'error');
+                }
+            } catch (error) {
+                showToast('批量下载失败', 'error');
+            }
+        }
+
+        async function deleteTask(taskId) {
+            try {
+                const response = await fetch(`/api/task/${taskId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    tasks.delete(taskId);
+                    document.querySelector(`[data-task-id="${taskId}"]`)?.remove();
+                    updateEmptyState();
+                    showToast('任务已删除', 'success');
+                } else {
+                    showToast('删除失败', 'error');
+                }
+            } catch (error) {
+                showToast('删除失败', 'error');
+            }
+        }
+
+        async function clearAllTasks() {
+            if (tasks.size === 0) return;
+            
+            if (!confirm('确定要清空所有任务吗？')) return;
+
+            try {
+                const response = await fetch('/api/tasks', { method: 'DELETE' });
+                if (response.ok) {
+                    tasks.clear();
+                    taskList.innerHTML = '';
+                    updateEmptyState();
+                    showToast('所有任务已清空', 'success');
+                } else {
+                    showToast('清空失败', 'error');
+                }
+            } catch (error) {
+                showToast('清空失败', 'error');
+            }
+        }
+
+        function retryTask(taskId) {
+            // Remove old task and re-upload
+            const task = tasks.get(taskId);
+            if (task) {
+                deleteTask(taskId);
+                showToast('请重新上传文件', 'info');
+            }
+        }
+
+        // Utilities
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+
+            toastIcon.textContent = icons[type] || icons.success;
+            toastMessage.textContent = message;
+
+            toast.classList.remove('translate-y-full', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-full', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
