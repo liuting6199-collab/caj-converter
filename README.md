@@ -2,9 +2,15 @@
 
 一个基于 FastAPI + JavaScript 的 CAJ 批量转 PDF Web 工具，解决知网 CAJ 文件难以转换的痛点。
 
+## 🌐 在线演示
+
+🚀 **[点击这里体验在线版本](https://caj-converter.onrender.com/)**
+
+---
+
 ## 📷 项目展示
 
-![alt text](image.png)(assets/screenshot.png)
+![CAJ Converter 界面截图](assets/screenshot.png)
 
 > *提示：运行本地项目后截图保存到 assets/screenshot.png*
 
@@ -49,20 +55,25 @@ caj_converter/
 
 ## 🚀 快速开始
 
-### 方法一：一键启动
+### 方法一：在线体验（推荐）
+🌐 直接访问：https://caj-converter.onrender.com/
+
+### 方法二：一键启动（本地）
 1. 双击 `start.bat` 文件
 2. 自动打开浏览器访问 http://127.0.0.1:8000
-3. 上传 CAJ 文件开始转换
 
-### 方法二：手动启动
+### 方法三：手动启动（开发者）
 ```bash
-# 安装依赖
+# 1. 打开终端，进入项目目录
+cd caj_converter
+
+# 2. 安装依赖
 pip install -r requirements.txt
 
-# 启动服务
+# 3. 启动服务
 python backend/main.py
 
-# 访问 http://127.0.0.1:8000
+# 4. 访问 http://127.0.0.1:8000
 ```
 
 ##  使用说明
