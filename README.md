@@ -9,10 +9,8 @@
 ---
 
 ## 📷 项目展示
-
-![CAJ Converter 界面截图](assets/screenshot.png)
-
-> *提示：运行本地项目后截图保存到 assets/screenshot.png*
+![CAJ Converter 界面截图](assets/pic1.png)
+![CAJ Converter 界面截图](assets/pic2.png)
 
 ## ✨ 功能特性
 
