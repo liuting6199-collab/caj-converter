@@ -6,16 +6,13 @@ CAJ Converter Web - 后端API服务
 """
 
 import os
-import shutil
 import zipfile
-import asyncio
-import subprocess
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware

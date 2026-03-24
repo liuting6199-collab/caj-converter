@@ -42,3 +42,14 @@ Thumbs.db
 
 # 日志文件
 *.log
+
+# 临时文件
+*.tmp
+*.tmp.jpg
+*.tmp.pdf
+pdf.tmp
+pdf_toc.pdf
+
+# 测试文件
+test_*.caj
+test_*.pdf

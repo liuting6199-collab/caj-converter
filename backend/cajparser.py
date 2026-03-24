@@ -287,22 +287,54 @@ class CAJParser(object):
         with open("pdf.tmp", 'wb') as f:
             f.write(pdf_data)
 
-        # Use mutool to repair xref
+        # Use mutool to repair xref (if available)
+        mutool_available = False
         try:
-            check_output(["mutool", "clean", "pdf.tmp", "pdf_toc.pdf"], stderr=STDOUT)
-        except CalledProcessError as e:
-            print(e.output.decode("utf-8"))
-            raise SystemExit("Command mutool returned non-zero exit status " + str(e.returncode))
+            check_output(["mutool", "-v"], stderr=STDOUT)
+            mutool_available = True
+        except:
+            print("Warning: mutool not found, using alternative method")
+            mutool_available = False
+
+        if mutool_available:
+            try:
+                check_output(["mutool", "clean", "pdf.tmp", "pdf_toc.pdf"], stderr=STDOUT)
+                pdf_file_for_toc = "pdf_toc.pdf"
+            except CalledProcessError as e:
+                print(e.output.decode("utf-8"))
+                print("Warning: mutool failed, using original PDF")
+                pdf_file_for_toc = "pdf.tmp"
+        else:
+            # Try to repair PDF using PyPDF2
+            try:
+                from PyPDF2 import PdfReader, PdfWriter
+                reader = PdfReader("pdf.tmp")
+                writer = PdfWriter()
+                for page in reader.pages:
+                    writer.add_page(page)
+                with open("pdf_toc.pdf", "wb") as f:
+                    writer.write(f)
+                pdf_file_for_toc = "pdf_toc.pdf"
+            except Exception as e:
+                print(f"Warning: PyPDF2 repair failed: {e}, using original PDF")
+                pdf_file_for_toc = "pdf.tmp"
 
         # Add Outlines
         try:
-            add_outlines(self.get_toc(), "pdf_toc.pdf", dest)
+            add_outlines(self.get_toc(), pdf_file_for_toc, dest)
         except errors.PdfReadError as e:
             print("errors.PdfReadError:", str(e))
-            copy("pdf_toc.pdf", dest)
+            copy(pdf_file_for_toc, dest)
             pass
-        os.remove("pdf.tmp")
-        os.remove("pdf_toc.pdf")
+        except Exception as e:
+            print(f"Warning: Failed to add outlines: {e}")
+            copy(pdf_file_for_toc, dest)
+        
+        # Clean up
+        if os.path.exists("pdf.tmp"):
+            os.remove("pdf.tmp")
+        if os.path.exists("pdf_toc.pdf"):
+            os.remove("pdf_toc.pdf")
 
     def _convert_hn(self, dest):
         caj = open(self.filename, "rb")

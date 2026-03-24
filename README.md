@@ -6,11 +6,12 @@
 
 🚀 **[点击这里体验在线版本](https://caj-converter.onrender.com/)**
 
----
+***
 
 ## 📷 项目展示
-![CAJ Converter 界面截图](assets/pic1.png)
-![CAJ Converter 界面截图](assets/pic2.png)
+
+!\[CAJ Converter 界面截图]\(assets/pic1.png null)
+!\[CAJ Converter 界面截图]\(assets/pic2.png null)
 
 ## ✨ 功能特性
 
@@ -46,7 +47,7 @@ caj_converter/
 ├── lib/              # caj2pdf 库
 │   └── bin/          # Windows DLL 文件
 ├── requirements.txt  # Python 依赖
-├── start.bat         # 启动脚本
+├── 快速启动.bat       # 一键启动脚本
 ├── .gitignore        # Git 忽略配置
 └── README.md         # 本文件
 ```
@@ -54,13 +55,16 @@ caj_converter/
 ## 🚀 快速开始
 
 ### 方法一：在线体验（推荐）
-🌐 直接访问：https://caj-converter.onrender.com/
+
+🌐 直接访问：<https://caj-converter.onrender.com/>
 
 ### 方法二：一键启动（本地）
-1. 双击 `start.bat` 文件
-2. 自动打开浏览器访问 http://127.0.0.1:8000
+
+1. 双击 `快速启动.bat` 文件
+2. 自动打开浏览器访问 <http://127.0.0.1:8000>
 
 ### 方法三：手动启动（开发者）
+
 ```bash
 # 1. 打开终端，进入项目目录
 cd caj_converter
@@ -74,7 +78,7 @@ python backend/main.py
 # 4. 访问 http://127.0.0.1:8000
 ```
 
-##  使用说明
+## 使用说明
 
 1. **上传文件**：拖拽 CAJ 文件到上传区域，或点击选择文件
 2. **等待转换**：系统会自动处理，显示实时进度
@@ -109,6 +113,8 @@ MIT License
 
 欢迎提交 Issue 和 Pull Request！
 
----
+***
 
 **🎉 祝您使用愉快！**
+
+定期清理 ：建议定期清理 uploads/ , outputs/ , temp/ 目录
